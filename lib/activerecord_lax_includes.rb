@@ -12,13 +12,13 @@ module ActiveRecordLaxIncludes
 
     def preload_hash_with_lax_include(association)
       association.each do |parent, child|
-        Preloader.new(records, parent, preload_scope).run
+        ActiveRecord::Associations::Preloader.new(records, parent, preload_scope).run
         
         rec = records
         if lax_includes_enabled?
           rec = filtered_records_by_reflection(parent)
         end
-        Preloader.new(rec.map { |record| record.send(parent) }.flatten, child).run
+        ActiveRecord::Associations::Preloader.new(rec.map { |record| record.send(parent) }.flatten, child).run
       end
     end
 
