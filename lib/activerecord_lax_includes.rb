@@ -2,8 +2,8 @@ module ActiveRecordLaxIncludes
   module Preloader
     def self.included(base)
       base.class_eval do
-        alias_method :records_by_reflection_default, :records_by_reflection
-        alias_method :records_by_reflection, :records_by_reflection_with_lax_include
+        alias_method :grouped_records_default, :grouped_records
+        alias_method :grouped_records, :grouped_records_with_lax_include
 
         alias_method :preload_hash_default, :preload_hash
         alias_method :preload_hash, :preload_hash_with_lax_include
@@ -22,14 +22,19 @@ module ActiveRecordLaxIncludes
       end
     end
 
-    def records_by_reflection_with_lax_include(association)
+    def grouped_records_with_lax_include(association)
+      rec = records
       if lax_includes_enabled?
-        filtered_records_by_reflection(association).group_by do |record|
-          record.class.reflections[association]
-        end
-      else
-        records_by_reflection_default(association)
+        rec = filtered_records_by_reflection(association)
       end
+      
+      h = {}
+      rec.each do |record|
+        assoc = record.association(association)
+        klasses = h[assoc.reflection] ||= {}
+        (klasses[assoc.klass] ||= []) << record
+      end
+      h
     end
 
     def filtered_records_by_reflection(association)
